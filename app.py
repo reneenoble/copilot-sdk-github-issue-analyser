@@ -25,6 +25,7 @@ from pathlib import Path
 
 from pydantic import BaseModel, Field
 from copilot import CopilotClient, define_tool
+from copilot.session import PermissionHandler
 
 
 # =================================================================
@@ -39,11 +40,14 @@ async def hello_world():
     client = CopilotClient()
     await client.start()
 
-    session = await client.create_session({"model": "gpt-4.1"})
-    response = await session.send_and_wait({"prompt": "What is the GitHub Copilot SDK in 2 sentences?"})
+    session = await client.create_session(
+        model="gpt-4.1",
+        on_permission_request=PermissionHandler.approve_all,
+    )
+    response = await session.send_and_wait("What is the GitHub Copilot SDK in 2 sentences?")
     print(response.data.content)
 
-    await session.destroy()
+    await session.disconnect()
     await client.stop()
 
 
@@ -60,7 +64,10 @@ async def hello_world_streaming():
     client = CopilotClient()
     await client.start()
 
-    session = await client.create_session({"model": "gpt-4.1"})
+    session = await client.create_session(
+        model="gpt-4.1",
+        on_permission_request=PermissionHandler.approve_all,
+    )
 
     done = asyncio.Event()
 
@@ -71,11 +78,11 @@ async def hello_world_streaming():
             done.set()
 
     session.on(on_event)
-    await session.send({"prompt": "What is the GitHub Copilot SDK in 2 sentences?"})
+    await session.send("What is the GitHub Copilot SDK in 2 sentences?")
     await done.wait()
 
     print()
-    await session.destroy()
+    await session.disconnect()
     await client.stop()
 
 
@@ -244,11 +251,12 @@ async def analyse_cli(owner: str, repo: str, issue_number: int):
     client = CopilotClient()
     await client.start()
 
-    session = await client.create_session({
-        "model": "gpt-4.1",
-        "tools": TOOLS,
-        "instructions": SYSTEM_PROMPT,
-    })
+    session = await client.create_session(
+        model="gpt-4.1",
+        tools=TOOLS,
+        system_message={"mode": "append", "content": SYSTEM_PROMPT},
+        on_permission_request=PermissionHandler.approve_all,
+    )
 
     done = asyncio.Event()
 
@@ -263,13 +271,13 @@ async def analyse_cli(owner: str, repo: str, issue_number: int):
             done.set()
 
     session.on(on_event)
-    await session.send({
-        "prompt": f"Please analyse GitHub issue #{issue_number} in {owner}/{repo}."
-    })
+    await session.send(
+        f"Please analyse GitHub issue #{issue_number} in {owner}/{repo}."
+    )
     await done.wait()
 
     print("\n")
-    await session.destroy()
+    await session.disconnect()
     await client.stop()
 
 
@@ -321,11 +329,12 @@ async def stream_analysis(owner: str, repo: str, issue_number: int):
     client = CopilotClient()
     await client.start()
 
-    session = await client.create_session({
-        "model": "gpt-4.1",
-        "tools": TOOLS,
-        "instructions": SYSTEM_PROMPT,
-    })
+    session = await client.create_session(
+        model="gpt-4.1",
+        tools=TOOLS,
+        system_message={"mode": "append", "content": SYSTEM_PROMPT},
+        on_permission_request=PermissionHandler.approve_all,
+    )
 
     queue = asyncio.Queue()
 
@@ -337,21 +346,19 @@ async def stream_analysis(owner: str, repo: str, issue_number: int):
             if content and content.strip():
                 queue.put_nowait(("message", content))
 
-        elif name == "assistant.turn_end":
-            # Capture tool calls with their arguments before execution
-            for tr in getattr(event.data, "tool_requests", None) or []:
-                tool_name = getattr(tr, "name", None)
-                args = _parse_args(getattr(tr, "arguments", None))
-                if tool_name:
-                    queue.put_nowait(("tool_call", {"name": tool_name, "args": args}))
+        elif name == "tool.execution_start":
+            tool_name = getattr(event.data, "tool_name", None) or getattr(event.data, "name", None)
+            args = _parse_args(getattr(event.data, "arguments", None))
+            if tool_name:
+                queue.put_nowait(("tool_call", {"name": tool_name, "args": args}))
 
         elif name == "session.idle":
             queue.put_nowait(("done", None))
 
     session.on(on_event)
-    await session.send({
-        "prompt": f"Please analyse GitHub issue #{issue_number} in {owner}/{repo}."
-    })
+    await session.send(
+        f"Please analyse GitHub issue #{issue_number} in {owner}/{repo}."
+    )
 
     while True:
         event_type, data = await queue.get()
@@ -363,7 +370,7 @@ async def stream_analysis(owner: str, repo: str, issue_number: int):
             yield f"event: done\ndata: {json.dumps({'status': 'complete'})}\n\n"
             break
 
-    await session.destroy()
+    await session.disconnect()
     await client.stop()
 
 
@@ -454,11 +461,12 @@ async def analyse_and_post(owner: str, repo: str, issue_number: int):
     client = CopilotClient()
     await client.start()
 
-    session = await client.create_session({
-        "model": "gpt-4.1",
-        "tools": TOOLS,
-        "instructions": SYSTEM_PROMPT,
-    })
+    session = await client.create_session(
+        model="gpt-4.1",
+        tools=TOOLS,
+        system_message={"mode": "append", "content": SYSTEM_PROMPT},
+        on_permission_request=PermissionHandler.approve_all,
+    )
 
     done = asyncio.Event()
     response_parts = []
@@ -476,11 +484,11 @@ async def analyse_and_post(owner: str, repo: str, issue_number: int):
             done.set()
 
     session.on(on_event)
-    await session.send({
-        "prompt": f"Please analyse GitHub issue #{issue_number} in {owner}/{repo}."
-    })
+    await session.send(
+        f"Please analyse GitHub issue #{issue_number} in {owner}/{repo}."
+    )
     await done.wait()
-    await session.destroy()
+    await session.disconnect()
     await client.stop()
 
     analysis = "".join(response_parts)
