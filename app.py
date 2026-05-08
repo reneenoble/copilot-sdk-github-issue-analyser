@@ -1,15 +1,15 @@
 """
-stream_api.py — GitHub Issue Complexity Analyser
+app.py — GitHub Issue Complexity Analyser
 
 Built step-by-step during the livestream. Frontend is pre-built in src/static/.
 
 Usage:
-  python stream_api.py hello                          # Phase 2a: Simplest SDK call
-  python stream_api.py hello-stream                   # Phase 2b: Streaming events
-  python stream_api.py <github_issue_url>             # Phase 4: CLI analysis
-  python stream_api.py <owner> <repo> <issue_number>  # Phase 4: CLI analysis
-  python stream_api.py serve                          # Phase 5: Start web UI
-  python stream_api.py post <github_issue_url>        # Phase 6a: Analyse + post comment & labels
+  python app.py hello                          # Phase 2a: Simplest SDK call
+  python app.py hello-stream                   # Phase 2b: Streaming events
+  python app.py <github_issue_url>             # Phase 4: CLI analysis
+  python app.py <owner> <repo> <issue_number>  # Phase 4: CLI analysis
+  python app.py serve                          # Phase 5: Start web UI
+  python app.py post <github_issue_url>        # Phase 6a: Analyse + post comment & labels
 """
 
 # =================================================================
@@ -555,12 +555,12 @@ def parse_github_url(url: str) -> tuple[str, str, int]:
 if __name__ == "__main__":
     if len(sys.argv) < 2:
         print("🐛 GitHub Issue Complexity Analyser — Livestream Build\n")
-        print("  python stream_api.py hello                          # Test the SDK (send_and_wait)")
-        print("  python stream_api.py hello-stream                   # Test with streaming events")
-        print("  python stream_api.py <github_issue_url>             # CLI analysis")
-        print("  python stream_api.py <owner> <repo> <issue_number>  # CLI analysis")
-        print("  python stream_api.py serve                          # Web UI")
-        print("  python stream_api.py post <github_issue_url>        # Analyse + post to issue")
+        print("  python app.py hello                          # Test the SDK (send_and_wait)")
+        print("  python app.py hello-stream                   # Test with streaming events")
+        print("  python app.py <github_issue_url>             # CLI analysis")
+        print("  python app.py <owner> <repo> <issue_number>  # CLI analysis")
+        print("  python app.py serve                          # Web UI")
+        print("  python app.py post <github_issue_url>        # Analyse + post to issue")
         sys.exit(0)
 
     cmd = sys.argv[1]
