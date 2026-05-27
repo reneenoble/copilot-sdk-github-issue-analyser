@@ -211,7 +211,7 @@ flowchart TD
 | Resource | Description |
 |----------|-------------|
 | 📖 [Official SDK Documentation](https://github.com/github/copilot-sdk) | GitHub Copilot SDK repo and docs |
-| 🎓 [Copilot SDK for Beginners Course](https://github.com/reneenoble/gh-copilot-sdk-repo-analyser) | A hands-on course teaching you to build AI agents with the SDK |
+| 🎓 [Copilot SDK for Beginners Course](https://github.com/reneenoble/github-copilot-sdk-for-beginners) | A hands-on course teaching you to build AI agents with the SDK |
 | � [Copilot Plans & Pricing](https://github.com/features/copilot/plans) | Includes a free tier |
 
 
